@@ -7,6 +7,12 @@ redirect_from:
   - /about.html
 ---
 
+I am a member of the <a href="https://warwick.ac.uk/fac/sci/maths/">Mathematics Institute</a> of the <a href="http://www.warwick.ac.uk">University of Warwick</a>, working broadly on foundational aspects of computational mathematics. 
+
+Prior to Warwick I was a Lecturer in <a href="https://www.maths.manchester.ac.uk/research/themes/numerical-analysis-and-scientific-computing/"> Numerical Analysis</a> at the <a href="http://www.maths.manchester.ac.uk">University of Manchester</a> and held research positions at the <a href="http://www6.cityu.edu.hk/ma/">City University of Hong Kong</a>, at the <a href="http://www.maths.ox.ac.uk">University of Oxford</a>, and at the <a href="http://www.maths.ed.ac.uk">University of Edinburgh</a>, supported by a <a href="http://www.leverhulme.ac.uk">Leverhulme Trust</a> and Seggie Brown Fellowship. 
+
+I received my undergraduate degree from the <a href="http://www.math.ethz.ch">ETH</a> (Swiss Federal Institute of Technology) in Z&uuml;rich, and a PhD at the <a href="http://www.uni-paderborn.de">University of Paderborn</a>, with a thesis on <a href="https://www.springer.com/gp/book/9783540605829">Algebraic Complexity Theory</a>.
+
 This is the front page of a website that is powered by the [Academic Pages template](https://github.com/academicpages/academicpages.github.io) and hosted on GitHub pages. [GitHub pages](https://pages.github.com) is a free service in which websites are built and hosted from code and data stored in a GitHub repository, automatically updating when a new commit is made to the repository. This template was forked from the [Minimal Mistakes Jekyll Theme](https://mmistakes.github.io/minimal-mistakes/) created by Michael Rose, and then extended to support the kinds of content that academics have: publications, talks, teaching, a portfolio, blog posts, and a dynamically-generated CV. You can fork [this template](https://github.com/academicpages/academicpages.github.io) right now, modify the configuration and markdown files, add your own PDFs and other content, and have your own site for free, with no ads!
 
 A data-driven personal website
