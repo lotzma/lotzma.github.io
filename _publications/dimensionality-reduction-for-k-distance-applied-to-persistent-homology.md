@@ -6,8 +6,5 @@ permalink: "/publication/dimensionality-reduction-for-k-distance-applied-to-pers
 date: "2020-01-01"
 venue: "36th International Symposium on Computational Geometry (SoCG 2020), 10: 1-10: 15"
 paperurl: "https://scholar.google.co.uk/citations?view_op=view_citation&hl=en&user=ALeJ0sAAAAAJ&pagesize=100&sortby=pubdate&citation_for_view=ALeJ0sAAAAAJ:NMxIlDl6LWMC"
-citation: "S Arya, JD Boissonnat, K Dutta, M Lotz (2020) \"Dimensionality reduction for k-distance applied to persistent homology.\" <i>36th International Symposium on Computational Geometry (SoCG 2020), 10: 1-10: 15</i>"
 authors: "S Arya, JD Boissonnat, K Dutta, M Lotz"
 ---
-
-For more details, see the Google Scholar entry linked above.

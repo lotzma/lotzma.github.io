@@ -36,7 +36,11 @@
     {% if post.read_time %}
       <p class="page__meta"><i class="fa fa-clock-o" aria-hidden="true"></i> {% include read-time.html %}</p>
     {% endif %}
-    {% if post.venue%}<p class="archive__item-excerpt" itemprop="description">{{ post.citation }}</p> {% endif %}
+    {% assign pub_year = post.date | default: "1900-01-01" | date: "%Y" %}
+    {% if pub_year == '1900' %}{% assign pub_year = '' %}{% endif %}
+    {% if post.venue or pub_year %}
+      <p class="archive__item-excerpt" itemprop="description">{% if post.venue %}<i>{{ post.venue }}</i>{% if pub_year %}, {% endif %}{% endif %}{% if pub_year %}{{ pub_year }}{% endif %}</p>
+    {% endif %}
     </li>
  </article>
 </div>
