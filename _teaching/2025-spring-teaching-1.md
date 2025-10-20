@@ -21,6 +21,7 @@ The main part of the course will focus on phase space methods. This is a beautif
 We will eventually apply these powerful methods to particular examples of practical importance, including the Lotka-Volterra model for the competition between two species, Hamiltonian systems, and the Lorenz equations, and give an informal introduction to some more advanced topics (e.g. bifurcation theory, Lyapunov exponents).
 
 [Module page](https://warwick.ac.uk/fac/sci/maths/currentstudents/modules/ma254/)
+
 [Moodle](https://moodle.warwick.ac.uk/course/view.php?id=71653) - contains lecture notes
 
 Syllabus
