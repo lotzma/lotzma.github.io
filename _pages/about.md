@@ -1,7 +1,8 @@
 ---
 permalink: /
-title: "Martin Lotz"
+title: "About me"
 author_profile: true
+hide_footer: true
 redirect_from: 
   - /about/
   - /about.html
