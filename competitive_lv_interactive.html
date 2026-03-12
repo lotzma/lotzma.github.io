@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitive Lotka-Volterra Phase Portrait</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f0f13;
+    color: #e8e4dc;
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #f0ebe0;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-style: italic;
+    color: #8a8070;
+    font-size: 1.05rem;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .system-eq {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    background: #1a1a24;
+    border: 1px solid #2a2a38;
+    border-radius: 3px;
+    padding: 10px 18px;
+    color: #a0b8a0;
+    margin-bottom: 24px;
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  .main {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1200px;
+    width: 100%;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  canvas {
+    background: #18181f;
+    border: 1px solid #2a2a38;
+    border-radius: 4px;
+    cursor: crosshair;
+    display: block;
+  }
+
+  .canvas-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    gap: 12px;
+  }
+
+  .canvas-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: #5a5a6a;
+    letter-spacing: 0.02em;
+  }
+
+  .coord-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: #7a8a9a;
+    min-width: 120px;
+    text-align: right;
+  }
+
+  .sidebar {
+    max-width: 340px;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .panel {
+    border-left: 2px solid #2a2a38;
+    padding-left: 14px;
+  }
+
+  .panel h3 {
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #5a7a9a;
+    margin-bottom: 10px;
+  }
+
+  .param-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+  }
+
+  .param-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .param-group label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #8a8a9a;
+    letter-spacing: 0.05em;
+  }
+
+  .param-group .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .param-group input[type="range"] {
+    flex: 1;
+    accent-color: #5a7a9a;
+    height: 4px;
+    cursor: pointer;
+  }
+
+  .param-group .val-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #c8c0b0;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  button {
+    background: #1e1e2a;
+    border: 1px solid #3a3a50;
+    color: #c8c0b0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  button:hover {
+    background: #2a2a3a;
+    border-color: #5a7a9a;
+    color: #e8e4dc;
+  }
+
+  button.active {
+    background: #1a2a3a;
+    border-color: #5a7aaa;
+    color: #8ab4d4;
+  }
+
+  .fp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .fp-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: #b0a898;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fp-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .fp-stable { background: #3a8a5a; }
+  .fp-unstable { background: #c45a3a; }
+  .fp-saddle {
+    background: none;
+    border: 2px solid #c4a03a;
+    width: 8px;
+    height: 8px;
+  }
+
+  .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #b0a898;
+  }
+
+  .legend-line {
+    width: 24px;
+    height: 0;
+    flex-shrink: 0;
+  }
+
+  .preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .preset-buttons button {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+  }
+
+  @media (max-width: 800px) {
+    .main {
+      flex-direction: column;
+      align-items: center;
+    }
+    .sidebar {
+      max-width: 100%;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>Competitive Lotka-Volterra Phase Portrait</h1>
+<p class="subtitle">Interactive exploration of a two-species competition model</p>
+<div class="system-eq">
+  x&#x0307; = x(A - ax - by) &nbsp;&nbsp;&nbsp; y&#x0307; = y(B - cx - dy)
+</div>
+
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="phase-canvas" width="620" height="560"></canvas>
+    <div class="canvas-info-row">
+      <span class="canvas-hint">Click to add a trajectory. Scroll to zoom. Shift+drag to pan.</span>
+      <span class="coord-readout" id="coord-readout"></span>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <!-- Parameters -->
+    <div class="panel">
+      <h3>Parameters</h3>
+      <div class="param-grid">
+        <div class="param-group">
+          <label>A (x growth)</label>
+          <div class="input-row">
+            <input type="range" id="param-A" min="0" max="8" step="0.1" value="3">
+            <span class="val-display" id="val-A">3.0</span>
+          </div>
+        </div>
+        <div class="param-group">
+          <label>B (y growth)</label>
+          <div class="input-row">
+            <input type="range" id="param-B" min="0" max="8" step="0.1" value="2">
+            <span class="val-display" id="val-B">2.0</span>
+          </div>
+        </div>
+        <div class="param-group">
+          <label>a (x self-comp.)</label>
+          <div class="input-row">
+            <input type="range" id="param-a" min="0" max="5" step="0.1" value="1">
+            <span class="val-display" id="val-a">1.0</span>
+          </div>
+        </div>
+        <div class="param-group">
+          <label>b (x-y comp.)</label>
+          <div class="input-row">
+            <input type="range" id="param-b" min="0" max="5" step="0.1" value="2">
+            <span class="val-display" id="val-b">2.0</span>
+          </div>
+        </div>
+        <div class="param-group">
+          <label>c (y-x comp.)</label>
+          <div class="input-row">
+            <input type="range" id="param-c" min="0" max="5" step="0.1" value="1">
+            <span class="val-display" id="val-c">1.0</span>
+          </div>
+        </div>
+        <div class="param-group">
+          <label>d (y self-comp.)</label>
+          <div class="input-row">
+            <input type="range" id="param-d" min="0" max="5" step="0.1" value="1">
+            <span class="val-display" id="val-d">1.0</span>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="btn-redraw" onclick="redraw()">Redraw</button>
+        <button id="btn-clear" onclick="clearTrajectories()">Clear trajectories</button>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="panel">
+      <h3>Presets</h3>
+      <div class="preset-buttons">
+        <button onclick="loadPreset(3,1,2,2,1,1)" title="Species x excludes species y (x-nullcline above y-nullcline)">x wins</button>
+        <button onclick="loadPreset(2,1,1,3,2,1)" title="Species y excludes species x (y-nullcline above x-nullcline)">y wins</button>
+        <button onclick="loadPreset(3,1,0.5,2,0.5,1)" title="Stable coexistence at an interior fixed point">Coexistence</button>
+        <button onclick="loadPreset(3,1,2,2,2,1)" title="Bistability: outcome depends on initial condition">Bistable</button>
+        <button onclick="loadPreset(3,1,0,2,0,1)" title="Decoupled logistic equations (b=c=0)">Decoupled</button>
+        <button onclick="loadPreset(1,1,1,1,1,1)" title="Degenerate: all parameters equal">Symmetric</button>
+      </div>
+    </div>
+
+    <!-- Display toggles -->
+    <div class="panel">
+      <h3>Display</h3>
+      <div class="btn-row">
+        <button id="btn-vectors" class="active" onclick="toggleDisplay('vectors')">Vector field</button>
+        <button id="btn-nullclines" class="active" onclick="toggleDisplay('nullclines')">Nullclines</button>
+        <button id="btn-labels" class="active" onclick="toggleDisplay('labels')">Labels</button>
+      </div>
+    </div>
+
+    <!-- Fixed points -->
+    <div class="panel">
+      <h3>Fixed Points</h3>
+      <div class="fp-list" id="fp-list"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="panel">
+      <h3>Legend</h3>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div style="width:24px;height:0;border-top:2px dashed #cc4444;"></div>
+          <span>x-nullcline (x&#x0307;=0)</span>
+        </div>
+        <div class="legend-item">
+          <div style="width:24px;height:0;border-top:2px dashed #2277aa;"></div>
+          <span>y-nullcline (y&#x0307;=0)</span>
+        </div>
+        <div class="legend-item">
+          <div class="fp-dot fp-stable" style="display:inline-block;"></div>
+          <span>Stable node/spiral</span>
+        </div>
+        <div class="legend-item">
+          <div class="fp-dot fp-unstable" style="display:inline-block;"></div>
+          <span>Unstable node/spiral</span>
+        </div>
+        <div class="legend-item">
+          <div class="fp-dot fp-saddle" style="display:inline-block;"></div>
+          <span>Saddle point</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// State
+// ============================================================
+const canvas = document.getElementById('phase-canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// Margins for axes
+const margin = { left: 55, right: 20, top: 20, bottom: 50 };
+const plotW = W - margin.left - margin.right;
+const plotH = H - margin.top - margin.bottom;
+
+let params = { A: 3, a: 1, b: 2, B: 2, c: 1, d: 1 };
+let xMax = 4.5, yMax = 3.5;
+let trajectories = [];
+let displayFlags = { vectors: true, nullclines: true, labels: true };
+
+// Colour palette for trajectories
+const trajColours = [
+  '#2255aa', '#aa4422', '#228855', '#8844aa', '#aa7722',
+  '#44889a', '#884466', '#557733', '#7755bb', '#bb5555'
+];
+let trajColourIdx = 0;
+
+// Pan/zoom state
+let viewXMin = 0, viewYMin = 0, viewXMax = xMax, viewYMax = yMax;
+let isPanning = false, wasPanning = false, panStartX = 0, panStartY = 0, panStartViewXMin = 0, panStartViewYMin = 0;
+
+// ============================================================
+// Coordinate transforms
+// ============================================================
+function mathToCanvasX(x) {
+  return margin.left + ((x - viewXMin) / (viewXMax - viewXMin)) * plotW;
+}
+function mathToCanvasY(y) {
+  return margin.top + plotH - ((y - viewYMin) / (viewYMax - viewYMin)) * plotH;
+}
+function canvasToMathX(cx) {
+  return viewXMin + ((cx - margin.left) / plotW) * (viewXMax - viewXMin);
+}
+function canvasToMathY(cy) {
+  return viewYMin + ((margin.top + plotH - cy) / plotH) * (viewYMax - viewYMin);
+}
+
+// ============================================================
+// ODE right-hand side
+// ============================================================
+function f(x, y) {
+  const { A, a, b, B, c, d } = params;
+  return [
+    x * (A - a * x - b * y),
+    y * (B - c * x - d * y)
+  ];
+}
+
+// ============================================================
+// RK4 integrator
+// ============================================================
+function rk4Step(x, y, dt) {
+  const [k1x, k1y] = f(x, y);
+  const [k2x, k2y] = f(x + 0.5 * dt * k1x, y + 0.5 * dt * k1y);
+  const [k3x, k3y] = f(x + 0.5 * dt * k2x, y + 0.5 * dt * k2y);
+  const [k4x, k4y] = f(x + dt * k3x, y + dt * k3y);
+  return [
+    x + (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x),
+    y + (dt / 6) * (k1y + 2 * k2y + 2 * k3y + k4y)
+  ];
+}
+
+function integrate(x0, y0, dt, maxSteps, clipXMax, clipYMax) {
+  const pts = [[x0, y0]];
+  let x = x0, y = y0;
+  for (let i = 0; i < maxSteps; i++) {
+    [x, y] = rk4Step(x, y, dt);
+    // Clamp to axes (invariant manifolds) to avoid floating-point drift
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    pts.push([x, y]);
+    // Stop if we leave the visible region by a good margin
+    if (x > clipXMax * 2 || y > clipYMax * 2 || x < -clipXMax * 0.5 || y < -clipYMax * 0.5) break;
+    // Stop if very close to a fixed point and barely moving
+    const [dx, dy] = f(x, y);
+    if (Math.abs(dx) + Math.abs(dy) < 1e-10) break;
+  }
+  return pts;
+}
+
+// ============================================================
+// Fixed points
+// ============================================================
+function computeFixedPoints() {
+  const { A, a, b, B, c, d } = params;
+  const fps = [];
+
+  // (0,0) always exists
+  fps.push({ x: 0, y: 0, label: '(0, 0)' });
+
+  // (A/a, 0) exists when a > 0
+  if (a > 1e-12) {
+    fps.push({ x: A / a, y: 0, label: `(${fmt(A/a)}, 0)` });
+  }
+
+  // (0, B/d) exists when d > 0
+  if (d > 1e-12) {
+    fps.push({ x: 0, y: B / d, label: `(0, ${fmt(B/d)})` });
+  }
+
+  // Interior: solve ax + by = A, cx + dy = B
+  const det = a * d - b * c;
+  if (Math.abs(det) > 1e-12) {
+    const xi = (A * d - B * b) / det;
+    const yi = (B * a - A * c) / det;
+    if (xi > 1e-10 && yi > 1e-10) {
+      fps.push({ x: xi, y: yi, label: `(${fmt(xi)}, ${fmt(yi)})`, interior: true });
+    }
+  }
+
+  // Classify each fixed point via Jacobian eigenvalues
+  for (const fp of fps) {
+    classifyFP(fp);
+  }
+
+  return fps;
+}
+
+function classifyFP(fp) {
+  const { A, a, b, B, c, d } = params;
+  const x = fp.x, y = fp.y;
+
+  // Jacobian of the system:
+  // J = [ A - 2ax - by,   -bx        ]
+  //     [ -cy,             B - cx - 2dy ]
+  const j11 = A - 2 * a * x - b * y;
+  const j12 = -b * x;
+  const j21 = -c * y;
+  const j22 = B - c * x - 2 * d * y;
+
+  const tr = j11 + j22;
+  const det = j11 * j22 - j12 * j21;
+  const disc = tr * tr - 4 * det;
+
+  fp.trace = tr;
+  fp.det = det;
+  fp.disc = disc;
+
+  if (det < -1e-10) {
+    fp.type = 'saddle';
+    fp.colour = '#c4a03a';
+  } else if (det > 1e-10) {
+    if (tr < -1e-10) {
+      fp.type = disc >= 0 ? 'stable node' : 'stable spiral';
+      fp.colour = '#3a8a5a';
+    } else if (tr > 1e-10) {
+      fp.type = disc >= 0 ? 'unstable node' : 'unstable spiral';
+      fp.colour = '#c45a3a';
+    } else {
+      fp.type = 'centre';
+      fp.colour = '#5a7a9a';
+    }
+  } else {
+    // det ~ 0: degenerate
+    fp.type = 'degenerate';
+    fp.colour = '#888888';
+  }
+}
+
+function fmt(v) {
+  if (Math.abs(v - Math.round(v)) < 1e-8) return Math.round(v).toString();
+  return v.toFixed(2);
+}
+
+// ============================================================
+// Auto-scale viewport
+// ============================================================
+function autoScale() {
+  const fps = computeFixedPoints();
+  let mx = 1, my = 1;
+  for (const fp of fps) {
+    if (fp.x > mx) mx = fp.x;
+    if (fp.y > my) my = fp.y;
+  }
+  // Add 30% padding
+  xMax = mx * 1.4;
+  yMax = my * 1.4;
+  // Minimum size
+  if (xMax < 1) xMax = 1;
+  if (yMax < 1) yMax = 1;
+  viewXMin = 0;
+  viewYMin = 0;
+  viewXMax = xMax;
+  viewYMax = yMax;
+}
+
+// ============================================================
+// Drawing
+// ============================================================
+function drawAxes() {
+  ctx.strokeStyle = '#8a8a9a';
+  ctx.lineWidth = 1.5;
+
+  // x-axis
+  const x0c = mathToCanvasX(viewXMin);
+  const x1c = mathToCanvasX(viewXMax);
+  const y0c = mathToCanvasY(viewYMin);
+  ctx.beginPath();
+  ctx.moveTo(x0c, y0c);
+  ctx.lineTo(x1c, y0c);
+  ctx.stroke();
+
+  // y-axis
+  const y1c = mathToCanvasY(viewYMax);
+  ctx.beginPath();
+  ctx.moveTo(mathToCanvasX(viewXMin), y0c);
+  ctx.lineTo(mathToCanvasX(viewXMin), y1c);
+  ctx.stroke();
+
+  // Tick marks and labels
+  ctx.fillStyle = '#9a9aaa';
+  ctx.strokeStyle = '#8a8a9a';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  const xRange = viewXMax - viewXMin;
+  const yRange = viewYMax - viewYMin;
+  const xStep = niceStep(xRange, 8);
+  const yStep = niceStep(yRange, 8);
+
+  // x ticks
+  let t = Math.ceil(viewXMin / xStep) * xStep;
+  while (t <= viewXMax) {
+    if (t >= viewXMin) {
+      const cx = mathToCanvasX(t);
+      ctx.beginPath();
+      ctx.moveTo(cx, y0c);
+      ctx.lineTo(cx, y0c + 5);
+      ctx.stroke();
+      ctx.fillText(fmtTick(t), cx, y0c + 8);
+    }
+    t += xStep;
+  }
+
+  // y ticks
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  t = Math.ceil(viewYMin / yStep) * yStep;
+  while (t <= viewYMax) {
+    if (t >= viewYMin) {
+      const cy = mathToCanvasY(t);
+      const axisX = mathToCanvasX(viewXMin);
+      ctx.beginPath();
+      ctx.moveTo(axisX, cy);
+      ctx.lineTo(axisX - 5, cy);
+      ctx.stroke();
+      ctx.fillText(fmtTick(t), axisX - 8, cy);
+    }
+    t += yStep;
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#b0b0c0';
+  ctx.font = 'italic 15px "Crimson Pro", Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('x', margin.left + plotW / 2, H - 16);
+
+  ctx.save();
+  ctx.translate(14, margin.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('y', 0, 0);
+  ctx.restore();
+}
+
+function niceStep(range, maxTicks) {
+  const rough = range / maxTicks;
+  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+  const frac = rough / pow10;
+  let nice;
+  if (frac <= 1.5) nice = 1;
+  else if (frac <= 3.5) nice = 2;
+  else if (frac <= 7.5) nice = 5;
+  else nice = 10;
+  return nice * pow10;
+}
+
+function fmtTick(v) {
+  if (Math.abs(v) < 1e-10) return '0';
+  if (Math.abs(v - Math.round(v)) < 1e-8) return Math.round(v).toString();
+  return v.toFixed(1);
+}
+
+function drawGrid() {
+  const xRange = viewXMax - viewXMin;
+  const yRange = viewYMax - viewYMin;
+  const xStep = niceStep(xRange, 8);
+  const yStep = niceStep(yRange, 8);
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.lineWidth = 0.5;
+
+  let t = Math.ceil(viewXMin / xStep) * xStep;
+  while (t <= viewXMax) {
+    if (t > viewXMin) {
+      const cx = mathToCanvasX(t);
+      ctx.beginPath();
+      ctx.moveTo(cx, mathToCanvasY(viewYMin));
+      ctx.lineTo(cx, mathToCanvasY(viewYMax));
+      ctx.stroke();
+    }
+    t += xStep;
+  }
+
+  t = Math.ceil(viewYMin / yStep) * yStep;
+  while (t <= viewYMax) {
+    if (t > viewYMin) {
+      const cy = mathToCanvasY(t);
+      ctx.beginPath();
+      ctx.moveTo(mathToCanvasX(viewXMin), cy);
+      ctx.lineTo(mathToCanvasX(viewXMax), cy);
+      ctx.stroke();
+    }
+    t += yStep;
+  }
+}
+
+function drawVectorField() {
+  if (!displayFlags.vectors) return;
+
+  const nx = 22, ny = 20;
+  const dx = (viewXMax - viewXMin) / nx;
+  const dy = (viewYMax - viewYMin) / ny;
+
+  // Find max magnitude for scaling
+  let maxMag = 0;
+  const arrows = [];
+  for (let i = 0.5; i < nx; i++) {
+    for (let j = 0.5; j < ny; j++) {
+      const x = viewXMin + i * dx;
+      const y = viewYMin + j * dy;
+      if (x < 0 || y < 0) continue;
+      const [fx, fy] = f(x, y);
+      const mag = Math.sqrt(fx * fx + fy * fy);
+      if (mag > maxMag) maxMag = mag;
+      arrows.push({ x, y, fx, fy, mag });
+    }
+  }
+
+  if (maxMag < 1e-14) return;
+
+  const arrowLen = Math.min(dx, dy) * 0.6;
+
+  ctx.strokeStyle = 'rgba(90, 110, 145, 0.5)';
+  ctx.fillStyle = 'rgba(90, 110, 145, 0.5)';
+  ctx.lineWidth = 1.1;
+
+  for (const a of arrows) {
+    if (a.mag < 1e-14) continue;
+    // Scale arrow length by sqrt of magnitude for better visibility range
+    const scale = arrowLen * Math.sqrt(a.mag / maxMag);
+    const ux = a.fx / a.mag, uy = a.fy / a.mag;
+
+    const cx0 = mathToCanvasX(a.x);
+    const cy0 = mathToCanvasY(a.y);
+    const tipX = cx0 + ux * scale;
+    const tipY = cy0 - uy * scale; // canvas y is flipped
+
+    ctx.beginPath();
+    ctx.moveTo(cx0, cy0);
+    ctx.lineTo(tipX, tipY);
+    ctx.stroke();
+
+    // Arrowhead
+    const headLen = 4.5;
+    const angle = Math.atan2(tipY - cy0, tipX - cx0);
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - headLen * Math.cos(angle - 0.4), tipY - headLen * Math.sin(angle - 0.4));
+    ctx.lineTo(tipX - headLen * Math.cos(angle + 0.4), tipY - headLen * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawNullclines() {
+  if (!displayFlags.nullclines) return;
+
+  const { A, a, b, B, c, d } = params;
+  const nPts = 500;
+
+  // x-nullcline: x=0 (y-axis) or A - ax - by = 0 => y = (A - ax)/b (if b>0), x = A/a (if b=0, a>0)
+  // y-nullcline: y=0 (x-axis) or B - cx - dy = 0 => y = (B - cx)/d (if d>0), x = B/c (if d=0, c>0)
+
+  ctx.lineWidth = 1.8;
+  ctx.setLineDash([6, 4]);
+
+  // x-nullcline (non-trivial): A - ax - by = 0
+  ctx.strokeStyle = '#cc4444';
+  if (b > 1e-12) {
+    // y = (A - ax) / b
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= nPts; i++) {
+      const x = viewXMin + (viewXMax - viewXMin) * i / nPts;
+      const y = (A - a * x) / b;
+      if (x >= viewXMin && x <= viewXMax && y >= viewYMin && y <= viewYMax) {
+        const cx = mathToCanvasX(x);
+        const cy = mathToCanvasY(y);
+        if (!started) { ctx.moveTo(cx, cy); started = true; }
+        else ctx.lineTo(cx, cy);
+      }
+    }
+    ctx.stroke();
+  } else if (a > 1e-12) {
+    // Vertical line x = A/a
+    const xn = A / a;
+    if (xn >= viewXMin && xn <= viewXMax) {
+      ctx.beginPath();
+      ctx.moveTo(mathToCanvasX(xn), mathToCanvasY(viewYMin));
+      ctx.lineTo(mathToCanvasX(xn), mathToCanvasY(viewYMax));
+      ctx.stroke();
+    }
+  }
+
+  // Nullcline label
+  if (displayFlags.labels) {
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#cc4444';
+    ctx.font = 'italic 12px "Crimson Pro", Georgia, serif';
+    if (b > 1e-12) {
+      const labelX = a > 1e-12 ? Math.min(viewXMax * 0.85, A / a * 0.5) : viewXMax * 0.4;
+      const labelY = (A - a * labelX) / b;
+      if (labelY > viewYMin + 0.05 * (viewYMax - viewYMin) && labelY < viewYMax) {
+        ctx.fillText('x\u0307=0', mathToCanvasX(labelX) + 5, mathToCanvasY(labelY) - 10);
+      }
+    } else if (a > 1e-12) {
+      const xn = A / a;
+      if (xn >= viewXMin && xn <= viewXMax) {
+        ctx.fillText('x\u0307=0', mathToCanvasX(xn) + 5, mathToCanvasY(viewYMax * 0.8));
+      }
+    }
+    ctx.setLineDash([6, 4]);
+  }
+
+  // y-nullcline (non-trivial): B - cx - dy = 0
+  ctx.strokeStyle = '#2277aa';
+  if (d > 1e-12) {
+    // y = (B - cx) / d
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= nPts; i++) {
+      const x = viewXMin + (viewXMax - viewXMin) * i / nPts;
+      const y = (B - c * x) / d;
+      if (x >= viewXMin && x <= viewXMax && y >= viewYMin && y <= viewYMax) {
+        const cx = mathToCanvasX(x);
+        const cy = mathToCanvasY(y);
+        if (!started) { ctx.moveTo(cx, cy); started = true; }
+        else ctx.lineTo(cx, cy);
+      }
+    }
+    ctx.stroke();
+  } else if (c > 1e-12) {
+    // Vertical line x = B/c
+    const xn = B / c;
+    if (xn >= viewXMin && xn <= viewXMax) {
+      ctx.beginPath();
+      ctx.moveTo(mathToCanvasX(xn), mathToCanvasY(viewYMin));
+      ctx.lineTo(mathToCanvasX(xn), mathToCanvasY(viewYMax));
+      ctx.stroke();
+    }
+  }
+
+  // Nullcline label
+  if (displayFlags.labels) {
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#2277aa';
+    ctx.font = 'italic 12px "Crimson Pro", Georgia, serif';
+    if (d > 1e-12) {
+      const labelX = c > 1e-12 ? Math.min(viewXMax * 0.85, B / c * 0.5) : viewXMax * 0.6;
+      const labelY = (B - c * labelX) / d;
+      if (labelY > viewYMin + 0.05 * (viewYMax - viewYMin) && labelY < viewYMax) {
+        ctx.fillText('y\u0307=0', mathToCanvasX(labelX) + 5, mathToCanvasY(labelY) - 10);
+      }
+    } else if (c > 1e-12) {
+      const xn = B / c;
+      if (xn >= viewXMin && xn <= viewXMax) {
+        ctx.fillText('y\u0307=0', mathToCanvasX(xn) + 5, mathToCanvasY(viewYMax * 0.6));
+      }
+    }
+    ctx.setLineDash([6, 4]);
+  }
+
+  // Also draw the axes as nullclines (x=0 is y-nullcline and x-nullcline, y=0 is x-nullcline and y-nullcline)
+  // These are implicit; the axes are already drawn.
+
+  ctx.setLineDash([]);
+}
+
+function drawFixedPoints() {
+  const fps = computeFixedPoints();
+
+  for (const fp of fps) {
+    const cx = mathToCanvasX(fp.x);
+    const cy = mathToCanvasY(fp.y);
+
+    // Check if in view
+    if (fp.x < viewXMin || fp.x > viewXMax || fp.y < viewYMin || fp.y > viewYMax) continue;
+
+    ctx.beginPath();
+    if (fp.type === 'saddle') {
+      // Draw as a diamond/cross
+      const s = 5;
+      ctx.moveTo(cx - s, cy);
+      ctx.lineTo(cx, cy - s);
+      ctx.lineTo(cx + s, cy);
+      ctx.lineTo(cx, cy + s);
+      ctx.closePath();
+      ctx.fillStyle = fp.colour;
+      ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else {
+      ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = fp.colour;
+      ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Label
+    if (displayFlags.labels) {
+      ctx.fillStyle = '#333333';
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(fp.label, cx + 8, cy - 4);
+
+      // Type label (smaller)
+      ctx.fillStyle = '#777777';
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillText(fp.type, cx + 8, cy + 8);
+    }
+  }
+
+  // Update sidebar fixed point list
+  updateFPList(fps);
+}
+
+function updateFPList(fps) {
+  const list = document.getElementById('fp-list');
+  list.innerHTML = '';
+  for (const fp of fps) {
+    const div = document.createElement('div');
+    div.className = 'fp-item';
+
+    const dot = document.createElement('div');
+    dot.className = 'fp-dot';
+    if (fp.type === 'saddle') {
+      dot.className = 'fp-dot fp-saddle';
+    } else if (fp.type.startsWith('stable')) {
+      dot.className = 'fp-dot fp-stable';
+    } else if (fp.type.startsWith('unstable')) {
+      dot.className = 'fp-dot fp-unstable';
+    } else {
+      dot.style.background = fp.colour;
+      dot.className = 'fp-dot';
+    }
+
+    const span = document.createElement('span');
+    span.textContent = `${fp.label}  ${fp.type}`;
+    div.appendChild(dot);
+    div.appendChild(span);
+    list.appendChild(div);
+  }
+}
+
+function drawTrajectories() {
+  for (const traj of trajectories) {
+    if (traj.pts.length < 2) continue;
+
+    ctx.strokeStyle = traj.colour;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+
+    let started = false;
+    for (const [x, y] of traj.pts) {
+      const cx = mathToCanvasX(x);
+      const cy = mathToCanvasY(y);
+      // Clip to plot area
+      if (cx >= margin.left && cx <= margin.left + plotW &&
+          cy >= margin.top && cy <= margin.top + plotH) {
+        if (!started) { ctx.moveTo(cx, cy); started = true; }
+        else ctx.lineTo(cx, cy);
+      } else {
+        started = false;
+      }
+    }
+    ctx.stroke();
+
+    // Draw initial point marker
+    const [x0, y0] = traj.pts[Math.floor(traj.pts.length / 2) < traj.fwdStart ? traj.fwdStart : traj.fwdStart];
+    const cx0 = mathToCanvasX(x0);
+    const cy0 = mathToCanvasY(y0);
+    if (cx0 >= margin.left && cx0 <= margin.left + plotW &&
+        cy0 >= margin.top && cy0 <= margin.top + plotH) {
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = traj.colour;
+      ctx.fill();
+    }
+
+    // Draw direction arrows along the trajectory
+    drawArrowsAlongTrajectory(traj);
+  }
+}
+
+function drawArrowsAlongTrajectory(traj) {
+  const pts = traj.pts;
+  if (pts.length < 10) return;
+
+  // Draw a few arrows spaced along the trajectory
+  const numArrows = Math.min(5, Math.floor(pts.length / 20));
+  const spacing = Math.floor(pts.length / (numArrows + 1));
+
+  ctx.fillStyle = traj.colour;
+
+  for (let k = 1; k <= numArrows; k++) {
+    const idx = k * spacing;
+    if (idx >= pts.length - 1) continue;
+
+    const [x1, y1] = pts[idx];
+    const [x2, y2] = pts[idx + 1];
+    const cx1 = mathToCanvasX(x1);
+    const cy1 = mathToCanvasY(y1);
+    const cx2 = mathToCanvasX(x2);
+    const cy2 = mathToCanvasY(y2);
+
+    // Check in plot area
+    if (cx1 < margin.left || cx1 > margin.left + plotW ||
+        cy1 < margin.top || cy1 > margin.top + plotH) continue;
+
+    const dx = cx2 - cx1, dy = cy2 - cy1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.5) continue;
+
+    const angle = Math.atan2(dy, dx);
+    const hs = 5;
+
+    ctx.beginPath();
+    ctx.moveTo(cx1, cy1);
+    ctx.lineTo(cx1 - hs * Math.cos(angle - 0.45), cy1 - hs * Math.sin(angle - 0.45));
+    ctx.lineTo(cx1 - hs * Math.cos(angle + 0.45), cy1 - hs * Math.sin(angle + 0.45));
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+// ============================================================
+// Main render
+// ============================================================
+function render() {
+  // Dark background for entire canvas
+  ctx.fillStyle = '#18181f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Light plot background
+  ctx.fillStyle = '#fafaf8';
+  ctx.fillRect(margin.left, margin.top, plotW, plotH);
+
+  // Clip to plot area for field/trajectories
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(margin.left, margin.top, plotW, plotH);
+  ctx.clip();
+
+  drawGrid();
+  drawVectorField();
+  drawNullclines();
+  drawTrajectories();
+  drawFixedPoints();
+
+  ctx.restore();
+
+  drawAxes();
+}
+
+// ============================================================
+// Interaction
+// ============================================================
+function readParams() {
+  const names = ['A', 'a', 'b', 'B', 'c', 'd'];
+  for (const name of names) {
+    const slider = document.getElementById('param-' + name);
+    params[name] = parseFloat(slider.value);
+    document.getElementById('val-' + name).textContent = params[name].toFixed(1);
+  }
+}
+
+function redraw() {
+  readParams();
+  autoScale();
+  trajectories = [];
+  trajColourIdx = 0;
+  render();
+}
+
+function clearTrajectories() {
+  trajectories = [];
+  trajColourIdx = 0;
+  render();
+}
+
+function toggleDisplay(name) {
+  displayFlags[name] = !displayFlags[name];
+  document.getElementById('btn-' + name).classList.toggle('active', displayFlags[name]);
+  render();
+}
+
+function loadPreset(A, a, b, B, c, d) {
+  const vals = { A, a, b, B, c, d };
+  for (const [name, val] of Object.entries(vals)) {
+    document.getElementById('param-' + name).value = val;
+    document.getElementById('val-' + name).textContent = val.toFixed(1);
+    params[name] = val;
+  }
+  autoScale();
+  trajectories = [];
+  trajColourIdx = 0;
+  render();
+}
+
+// Slider live update
+for (const name of ['A', 'a', 'b', 'B', 'c', 'd']) {
+  const slider = document.getElementById('param-' + name);
+  slider.addEventListener('input', function() {
+    document.getElementById('val-' + name).textContent = parseFloat(this.value).toFixed(1);
+    params[name] = parseFloat(this.value);
+    autoScale();
+    render();
+  });
+}
+
+// Click to add trajectory
+canvas.addEventListener('click', function(e) {
+  if (isPanning || wasPanning) { wasPanning = false; return; }
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+
+  // Check if click is in plot area
+  if (cx < margin.left || cx > margin.left + plotW ||
+      cy < margin.top || cy > margin.top + plotH) return;
+
+  const x0 = canvasToMathX(cx);
+  const y0 = canvasToMathY(cy);
+
+  // Only allow clicks in positive orthant
+  if (x0 < 0 || y0 < 0) return;
+
+  // Integrate forward and backward
+  const dt = 0.005;
+  const maxSteps = 15000;
+
+  const fwdPts = integrate(x0, y0, dt, maxSteps, viewXMax, viewYMax);
+  const bwdPts = integrate(x0, y0, -dt, maxSteps, viewXMax, viewYMax);
+
+  // Combine: reverse backward, then append forward (skip duplicate start point)
+  bwdPts.reverse();
+  const combined = bwdPts.concat(fwdPts.slice(1));
+
+  const colour = trajColours[trajColourIdx % trajColours.length];
+  trajColourIdx++;
+
+  trajectories.push({
+    pts: combined,
+    fwdStart: bwdPts.length - 1,
+    colour: colour
+  });
+
+  render();
+});
+
+// Pan: mouse drag with middle button or shift+click
+canvas.addEventListener('mousedown', function(e) {
+  if (e.button === 1 || e.shiftKey) {
+    isPanning = true;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    panStartViewXMin = viewXMin;
+    panStartViewYMin = viewYMin;
+    canvas.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+});
+
+canvas.addEventListener('mousemove', function(e) {
+  // Coordinate readout
+  const rectMM = canvas.getBoundingClientRect();
+  const scaleXMM = W / rectMM.width;
+  const scaleYMM = H / rectMM.height;
+  const cxMM = (e.clientX - rectMM.left) * scaleXMM;
+  const cyMM = (e.clientY - rectMM.top) * scaleYMM;
+  if (cxMM >= margin.left && cxMM <= margin.left + plotW &&
+      cyMM >= margin.top && cyMM <= margin.top + plotH) {
+    const mx = canvasToMathX(cxMM);
+    const my = canvasToMathY(cyMM);
+    document.getElementById('coord-readout').textContent =
+      `(${mx.toFixed(2)}, ${my.toFixed(2)})`;
+  } else {
+    document.getElementById('coord-readout').textContent = '';
+  }
+
+  if (!isPanning) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = (viewXMax - viewXMin) / rect.width;
+  const scaleY = (viewYMax - viewYMin) / rect.height;
+  const dx = (e.clientX - panStartX) * scaleX;
+  const dy = (e.clientY - panStartY) * scaleY;
+  const rangeX = viewXMax - viewXMin;
+  const rangeY = viewYMax - viewYMin;
+  viewXMin = panStartViewXMin - dx;
+  viewYMin = panStartViewYMin + dy; // y is flipped
+  viewXMax = viewXMin + rangeX;
+  viewYMax = viewYMin + rangeY;
+  render();
+});
+
+canvas.addEventListener('mouseup', function(e) {
+  if (isPanning) {
+    isPanning = false;
+    wasPanning = true;
+    canvas.style.cursor = 'crosshair';
+  }
+});
+
+// Zoom with scroll wheel
+canvas.addEventListener('wheel', function(e) {
+  e.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+
+  const mx = canvasToMathX(cx);
+  const my = canvasToMathY(cy);
+
+  const factor = e.deltaY > 0 ? 1.1 : 1 / 1.1;
+
+  viewXMin = mx - (mx - viewXMin) * factor;
+  viewXMax = mx + (viewXMax - mx) * factor;
+  viewYMin = my - (my - viewYMin) * factor;
+  viewYMax = my + (viewYMax - my) * factor;
+
+  render();
+}, { passive: false });
+
+// ============================================================
+// Initial draw
+// ============================================================
+readParams();
+autoScale();
+render();
+</script>
+</body>
+</html>
