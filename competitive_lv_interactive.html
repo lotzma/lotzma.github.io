@@ -338,6 +338,7 @@
       <div class="btn-row">
         <button id="btn-redraw" onclick="redraw()">Redraw</button>
         <button id="btn-clear" onclick="clearTrajectories()">Clear trajectories</button>
+        <button id="btn-export" onclick="exportPDF()">Export PDF</button>
       </div>
     </div>
 
@@ -1023,40 +1024,57 @@ function drawArrowsAlongTrajectory(traj) {
   const pts = traj.pts;
   if (pts.length < 10) return;
 
-  // Draw a few arrows spaced along the trajectory
-  const numArrows = Math.min(5, Math.floor(pts.length / 20));
+  // Draw direction arrows spaced along the trajectory
+  const numArrows = Math.min(6, Math.floor(pts.length / 15));
   const spacing = Math.floor(pts.length / (numArrows + 1));
 
   ctx.fillStyle = traj.colour;
+  ctx.strokeStyle = traj.colour;
+  ctx.lineWidth = 1.5;
 
   for (let k = 1; k <= numArrows; k++) {
     const idx = k * spacing;
     if (idx >= pts.length - 1) continue;
 
-    const [x1, y1] = pts[idx];
-    const [x2, y2] = pts[idx + 1];
-    const cx1 = mathToCanvasX(x1);
-    const cy1 = mathToCanvasY(y1);
-    const cx2 = mathToCanvasX(x2);
-    const cy2 = mathToCanvasY(y2);
+    // Average direction over a small window for a stable angle
+    let adx = 0, ady = 0;
+    const win = Math.min(5, pts.length - idx - 1);
+    for (let w = 0; w < win; w++) {
+      adx += mathToCanvasX(pts[idx + w + 1][0]) - mathToCanvasX(pts[idx + w][0]);
+      ady += mathToCanvasY(pts[idx + w + 1][1]) - mathToCanvasY(pts[idx + w][1]);
+    }
+    const alen = Math.sqrt(adx * adx + ady * ady);
+    if (alen < 0.5) continue;
+
+    const cx1 = mathToCanvasX(pts[idx][0]);
+    const cy1 = mathToCanvasY(pts[idx][1]);
 
     // Check in plot area
     if (cx1 < margin.left || cx1 > margin.left + plotW ||
         cy1 < margin.top || cy1 > margin.top + plotH) continue;
 
-    const dx = cx2 - cx1, dy = cy2 - cy1;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len < 0.5) continue;
+    const angle = Math.atan2(ady, adx);
+    const hs = 10;       // arrow half-length (tip to base)
+    const halfAngle = 0.38; // half-angle of the arrowhead (~22 degrees)
 
-    const angle = Math.atan2(dy, dx);
-    const hs = 5;
+    // Tip of the arrow sits at (cx1, cy1); two barb points behind it
+    const barbX1 = cx1 - hs * Math.cos(angle - halfAngle);
+    const barbY1 = cy1 - hs * Math.sin(angle - halfAngle);
+    const barbX2 = cx1 - hs * Math.cos(angle + halfAngle);
+    const barbY2 = cy1 - hs * Math.sin(angle + halfAngle);
+    // Indent point (gives the arrowhead a notched/chevron look)
+    const indent = 0.45; // how far back the notch goes (0 = flat base, 1 = at tip)
+    const notchX = cx1 - hs * indent * Math.cos(angle);
+    const notchY = cy1 - hs * indent * Math.sin(angle);
 
     ctx.beginPath();
     ctx.moveTo(cx1, cy1);
-    ctx.lineTo(cx1 - hs * Math.cos(angle - 0.45), cy1 - hs * Math.sin(angle - 0.45));
-    ctx.lineTo(cx1 - hs * Math.cos(angle + 0.45), cy1 - hs * Math.sin(angle + 0.45));
+    ctx.lineTo(barbX1, barbY1);
+    ctx.lineTo(notchX, notchY);
+    ctx.lineTo(barbX2, barbY2);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
   }
 }
 
@@ -1263,6 +1281,199 @@ canvas.addEventListener('wheel', function(e) {
 
   render();
 }, { passive: false });
+
+// ============================================================
+// PDF export
+// ============================================================
+
+function exportPDF() {
+  // ---- 1. Render a print-quality image onto an offscreen canvas ----
+  const scale = 2; // 2x resolution for crisp output
+  const titleH = 60 * scale;
+  const padX = 20 * scale;
+  const padY = 14 * scale;
+  const totalW = W * scale + 2 * padX;
+  const totalH = H * scale + titleH + padY;
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width = totalW;
+  offscreen.height = totalH;
+  const oc = offscreen.getContext('2d');
+
+  // White background for print
+  oc.fillStyle = '#ffffff';
+  oc.fillRect(0, 0, totalW, totalH);
+
+  // Title line
+  oc.fillStyle = '#222222';
+  oc.font = `bold ${18 * scale}px "Crimson Pro", Georgia, serif`;
+  oc.textAlign = 'center';
+  oc.textBaseline = 'top';
+  oc.fillText('Competitive Lotka-Volterra Phase Portrait', totalW / 2, 12 * scale);
+
+  // Parameter line
+  const { A, a, b, B, c, d } = params;
+  const paramStr = `A=${A}  a=${a}  b=${b}  B=${B}  c=${c}  d=${d}`;
+  oc.font = `${11 * scale}px "JetBrains Mono", monospace`;
+  oc.fillStyle = '#555555';
+  oc.fillText(paramStr, totalW / 2, 38 * scale);
+
+  // System equations
+  oc.font = `italic ${10 * scale}px "Crimson Pro", Georgia, serif`;
+  oc.fillStyle = '#666666';
+  oc.fillText(
+    'x\u0307 = x(A \u2212 ax \u2212 by)     y\u0307 = y(B \u2212 cx \u2212 dy)',
+    totalW / 2, 52 * scale
+  );
+
+  // Draw the main canvas content, scaled up
+  oc.drawImage(canvas, padX, titleH, W * scale, H * scale);
+
+  // ---- 2. Get JPEG bytes from the offscreen canvas ----
+  const jpegDataUrl = offscreen.toDataURL('image/jpeg', 0.95);
+  const jpegBase64 = jpegDataUrl.split(',')[1];
+  const jpegBytes = base64ToBytes(jpegBase64);
+
+  // ---- 3. Build a minimal PDF (landscape A4, single JPEG image) ----
+  //
+  // PDF coordinate system: 1 point = 1/72 inch.
+  // A4 landscape = 842 x 595 pt.
+  // We scale the image to fill the page with some margin.
+  //
+  // Object layout:
+  //   1 0 obj  Catalog
+  //   2 0 obj  Pages
+  //   3 0 obj  Page
+  //   4 0 obj  Image XObject (the JPEG stream)
+  //   5 0 obj  Page content stream (draws the image)
+  //
+  const pageW = 842, pageH = 595;
+  const imgMargin = 28; // pt margin on each side
+
+  // Scale image to fit within margins, preserving aspect ratio
+  const availW = pageW - 2 * imgMargin;
+  const availH = pageH - 2 * imgMargin;
+  const imgAspect = totalW / totalH;
+  let drawW, drawH;
+  if (availW / availH > imgAspect) {
+    drawH = availH;
+    drawW = drawH * imgAspect;
+  } else {
+    drawW = availW;
+    drawH = drawW / imgAspect;
+  }
+  const drawX = imgMargin + (availW - drawW) / 2;
+  const drawY = imgMargin + (availH - drawH) / 2;
+
+  // Content stream: position and draw the image
+  const contentStr =
+    `q\n${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${drawX.toFixed(2)} ${drawY.toFixed(2)} cm\n/Img Do\nQ\n`;
+  const contentBytes = stringToBytes(contentStr);
+
+  // Assemble objects, tracking byte offsets for the xref table
+  const parts = [];
+  const offsets = [];
+
+  // Header
+  parts.push(stringToBytes('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'));
+
+  // Object 1: Catalog
+  offsets.push(totalBytes(parts));
+  parts.push(stringToBytes(
+    '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
+  ));
+
+  // Object 2: Pages
+  offsets.push(totalBytes(parts));
+  parts.push(stringToBytes(
+    `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n`
+  ));
+
+  // Object 3: Page
+  offsets.push(totalBytes(parts));
+  parts.push(stringToBytes(
+    `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}]\n` +
+    `   /Contents 5 0 R /Resources << /XObject << /Img 4 0 R >> >> >>\nendobj\n`
+  ));
+
+  // Object 4: Image XObject (JPEG stream)
+  offsets.push(totalBytes(parts));
+  const imgHeader = stringToBytes(
+    `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${totalW} /Height ${totalH}\n` +
+    `   /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode\n` +
+    `   /Length ${jpegBytes.length} >>\nstream\n`
+  );
+  parts.push(imgHeader);
+  parts.push(jpegBytes);
+  parts.push(stringToBytes('\nendstream\nendobj\n'));
+
+  // Object 5: Content stream
+  offsets.push(totalBytes(parts));
+  parts.push(stringToBytes(
+    `5 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`
+  ));
+  parts.push(contentBytes);
+  parts.push(stringToBytes('\nendstream\nendobj\n'));
+
+  // Cross-reference table
+  const xrefOffset = totalBytes(parts);
+  let xref = `xref\n0 ${offsets.length + 1}\n`;
+  xref += '0000000000 65535 f \n';
+  for (const off of offsets) {
+    xref += off.toString().padStart(10, '0') + ' 00000 n \n';
+  }
+  parts.push(stringToBytes(xref));
+
+  // Trailer
+  parts.push(stringToBytes(
+    `trailer\n<< /Size ${offsets.length + 1} /Root 1 0 R >>\n` +
+    `startxref\n${xrefOffset}\n%%EOF\n`
+  ));
+
+  // ---- 4. Combine all parts into one Uint8Array and trigger download ----
+  const pdfLength = totalBytes(parts);
+  const pdf = new Uint8Array(pdfLength);
+  let pos = 0;
+  for (const part of parts) {
+    pdf.set(part, pos);
+    pos += part.length;
+  }
+
+  const blob = new Blob([pdf], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `lotka_volterra_A${A}_a${a}_b${b}_B${B}_c${c}_d${d}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// ---- PDF helper functions ----
+
+function base64ToBytes(b64) {
+  const binStr = atob(b64);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) {
+    bytes[i] = binStr.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function stringToBytes(str) {
+  const bytes = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    bytes[i] = str.charCodeAt(i) & 0xff;
+  }
+  return bytes;
+}
+
+function totalBytes(parts) {
+  let n = 0;
+  for (const p of parts) n += p.length;
+  return n;
+}
 
 // ============================================================
 // Initial draw
