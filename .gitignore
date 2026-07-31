@@ -11,3 +11,9 @@ Gemfile.lock
 # Ingore files created by npm
 node_modules
 package-lock.json
+
+# Other
+.DS_Store
+_sass/.DS_Store
+_sass/vendor/.DS_Store
+oldwebsite/
