@@ -9,7 +9,10 @@ main:
     url: /publications/
 
   - title: "Teaching"
-    url: /teaching/    
-    
+    url: /teaching/
+
+  - title: "Exposition"
+    url: /exposition/
+
   - title: "CV"
     url: /files/cv-2025_8-lotz.pdf

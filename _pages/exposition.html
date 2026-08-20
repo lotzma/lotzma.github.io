@@ -1,0 +1,14 @@
+---
+layout: archive
+title: "Exposition"
+permalink: /exposition/
+author_profile: true
+---
+
+{% include base_path %}
+
+{% assign sorted_exposition = site.exposition | sort: 'date' | reverse %}
+
+{% for post in sorted_exposition %}
+  {% include archive-single.html %}
+{% endfor %}
